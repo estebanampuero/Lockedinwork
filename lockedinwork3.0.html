@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LockedInWork - IA que no solo habla, actúa.</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>">
+
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #0d0d1a; /* Deep blue/black */
+            color: #E5E7EB;
+        }
+
+        /* Particles.js background */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        /* Glassmorphism effect */
+        .glass-effect {
+            background: rgba(13, 13, 26, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Header scroll effect */
+        .header-scrolled {
+            background-color: rgba(13, 13, 26, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Scroll-triggered animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Pulsing CTA */
+        .cta-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+
+        /* 3D hover effect for cards */
+        .card-3d {
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            transform-style: preserve-3d;
+        }
+        .card-3d:hover:not(.active) {
+            transform: perspective(1000px) rotateY(var(--rotateY)) rotateX(var(--rotateX)) scale3d(1.05, 1.05, 1.05);
+            box-shadow: 0px 20px 40px -10px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Before/After slider */
+        .comparison-slider {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .comparison-slider .after-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+        }
+        .comparison-slider .slider-handle {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: #67E8F9; /* cyan-300 */
+            cursor: ew-resize;
+        }
+        .comparison-slider .slider-handle::before {
+            content: '↔';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: #67E8F9;
+            color: #0d0d1a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* Expandable Service Card */
+        .service-card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1), padding 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .service-card.active .service-card-content {
+            padding-top: 1.5rem;
+        }
+        .service-card.active .arrow-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* Mini visualization animations */
+        .voice-wave span {
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            margin: 0 2px;
+            background-color: #67E8F9;
+            animation: wave 1.2s infinite ease-in-out;
+        }
+        .voice-wave span:nth-child(2) { animation-delay: -1.0s; }
+        .voice-wave span:nth-child(3) { animation-delay: -0.8s; }
+        .voice-wave span:nth-child(4) { animation-delay: -0.6s; }
+        .voice-wave span:nth-child(5) { animation-delay: -0.4s; }
+        @keyframes wave {
+            0%, 40%, 100% { transform: scaleY(0.4); }
+            20% { transform: scaleY(1.0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="relative w-full">
+        <!-- Particle Background -->
+        <div id="particles-js"></div>
+
+        <!-- Header -->
+        <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-transparent">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <a href="#" class="text-2xl font-bold text-white">LockedIn<span class="text-cyan-300">Work</span></a>
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#differentiator" class="text-gray-300 hover:text-white transition-colors">Diferenciador</a>
+                    <a href="#services" class="text-gray-300 hover:text-white transition-colors">Servicios</a>
+                    <a href="#value-prop" class="text-gray-300 hover:text-white transition-colors">Resultados</a>
+                    <a href="#contact" class="bg-cyan-400 text-black font-semibold px-5 py-2 rounded-lg hover:bg-cyan-300 transition-colors">Solicita una Demo</a>
+                </nav>
+                <button class="md:hidden text-white">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="relative z-10">
+            <!-- Hero Section -->
+            <section class="min-h-screen flex items-center justify-center text-center px-4">
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tighter reveal">
+                        IA que no solo habla, <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-fuchsia-500">actúa.</span>
+                    </h1>
+                    <p class="mt-6 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto reveal" style="transition-delay: 150ms;">
+                        LockedInWork integra inteligencia real con tus datos y sistemas.
+                    </p>
+                    <div class="mt-12 reveal" style="transition-delay: 300ms;">
+                        <a href="#differentiator" class="cta-pulse bg-cyan-400 text-black font-bold px-10 py-4 rounded-xl hover:bg-cyan-300 transition-all duration-300 transform hover:scale-105">
+                            Explora el futuro
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Differentiator Section -->
+            <section id="differentiator" class="py-24 sm:py-32">
+                <div class="container mx-auto px-6">
+                    <div class="text-center max-w-3xl mx-auto reveal">
+                        <h2 class="text-3xl md:text-5xl font-bold text-white">Otros venden interfaces. <br/> Nosotros implementamos inteligencia.</h2>
+                    </div>
+                    <div class="mt-16 max-w-5xl mx-auto reveal">
+                        <div class="comparison-slider glass-effect rounded-3xl">
+                            <div class="before-image relative">
+                                <img src="https://placehold.co/1200x600/1e293b/e2e8f0?text=Chatbots+T%C3%ADpicos" alt="Chatbots Típicos" class="w-full h-auto rounded-3xl opacity-70">
+                                <div class="absolute inset-0 flex flex-col justify-center items-center p-8 text-center bg-black/50">
+                                    <h3 class="text-2xl font-bold text-fuchsia-400">Chatbots Típicos</h3>
+                                    <p class="mt-2 text-gray-300">Respuestas genéricas. Sin acceso a datos. Poca capacidad de acción.</p>
+                                </div>
+                            </div>
+                            <div class="after-image">
+                                <img src="https://placehold.co/1200x600/4338ca/e0e7ff?text=IA+Conectada" alt="IA Conectada" class="w-full h-auto rounded-3xl">
+                                <div class="absolute inset-0 flex flex-col justify-center items-center p-8 text-center bg-black/50">
+                                    <h3 class="text-2xl font-bold text-cyan-300">IA Conectada a Datos Reales</h3>
+                                    <p class="mt-2 text-gray-200">Decisiones informadas. Acciones automatizadas. ROI medible.</p>
+                                </div>
+                            </div>
+                            <div class="slider-handle"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Services Section -->
+            <section id="services" class="py-24 sm:py-32">
+                <div class="container mx-auto px-6">
+                    <div class="text-center max-w-3xl mx-auto reveal">
+                        <h2 class="text-3xl md:text-5xl font-bold text-white">Servicios Especializados</h2>
+                    </div>
+                    <div id="services-container" class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Service Cards will be populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Value Proposition -->
+            <section id="value-prop" class="py-24 sm:py-32">
+                <div class="container mx-auto px-6 text-center">
+                    <div class="max-w-4xl mx-auto reveal">
+                        <blockquote class="text-3xl md:text-5xl font-bold text-white leading-tight">
+                            "No vendemos interfaces que conversan. Creamos sistemas que <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-fuchsia-500">piensan, entienden y actúan.</span>"
+                        </blockquote>
+                    </div>
+                    <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        <div class="reveal glass-effect p-8 rounded-2xl text-center">
+                            <p class="text-5xl font-bold text-cyan-300" data-kpi="90">0</p>
+                            <p class="mt-2 text-gray-300">% menos tiempo en reportería</p>
+                        </div>
+                        <div class="reveal glass-effect p-8 rounded-2xl text-center" style="transition-delay: 150ms;">
+                            <p class="text-5xl font-bold text-cyan-300" data-kpi="25">0</p>
+                            <p class="mt-2 text-gray-300">% más eficiencia en decisiones</p>
+                        </div>
+                        <div class="reveal glass-effect p-8 rounded-2xl text-center" style="transition-delay: 300ms;">
+                            <p class="text-5xl font-bold text-cyan-300" data-kpi="100">0</p>
+                            <p class="mt-2 text-gray-300">% oportunidades críticas identificadas</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Form -->
+            <section id="contact" class="py-24 sm:py-32">
+                <div class="container mx-auto px-6">
+                    <div class="glass-effect border-cyan-400/50 rounded-3xl p-8 md:p-16 max-w-3xl mx-auto reveal">
+                        <h2 class="text-3xl md:text-4xl font-bold text-white text-center">Solicita una demo personalizada</h2>
+                        <form class="mt-10 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <input type="text" placeholder="Nombre" required class="w-full bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all">
+                                <input type="text" placeholder="Empresa" required class="w-full bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all">
+                            </div>
+                            <input type="email" placeholder="Email de trabajo" required class="w-full bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all">
+                            <textarea rows="4" placeholder="Cuéntanos sobre tu proyecto (opcional)" class="w-full bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all"></textarea>
+                            <div class="text-center">
+                                <button type="submit" class="bg-cyan-400 text-black font-bold px-8 py-3 rounded-xl hover:bg-cyan-300 transition-all duration-300 transform hover:scale-105">
+                                    Enviar Solicitud
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t border-white/10 py-12 relative z-10">
+            <div class="container mx-auto px-6 text-center text-gray-500">
+                <div class="flex justify-center space-x-6 mb-6">
+                    <a href="#" class="hover:text-cyan-300 transition-colors">Twitter</a>
+                    <a href="#" class="hover:text-cyan-300 transition-colors">LinkedIn</a>
+                    <a href="#" class="hover:text-cyan-300 transition-colors">GitHub</a>
+                </div>
+                <p>&copy; 2025 LockedInWork. Todos los derechos reservados.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Particles.js script -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Initialize Particles.js ---
+        particlesJS('particles-js', {
+            "particles": { "number": { "value": 440, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#4f46e5" }, "shape": { "type": "circle" }, "opacity": { "value": 0.3, "random": true }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#a78bfa", "opacity": 0.15, "width": 1 }, "move": { "enable": true, "speed": 1, "direction": "none", "out_mode": "out" } },
+            "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": false } }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.3 } } } },
+            "retina_detect": true
+        });
+
+        // --- Service Cards Data ---
+        const services = [
+            { id: "conversational", title: "Agentes que Actúan", description: "Acceso y ejecución de tareas en sus CRMs, bases de datos y Google Sheets. Toman decisiones o las escalan de forma inteligente.", detailed: "Creamos agentes que dialogan con naturalidad, acceden a bases de conocimiento en tiempo real y resuelven problemas complejos, mejorando la experiencia del cliente y la eficiencia interna.", useCase: "Ej: Un asistente de soporte técnico que guía a un usuario consultando manuales y el historial del CRM.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full text-5xl animate-pulse">🤖</div>` },
+            { id: "integration", title: "Análisis de Interacciones", description: "No pierda la riqueza de la comunicación. Le entregamos informes con los insights de las conversaciones para que entienda y mejore.", detailed: "Nuestra IA se conecta de forma nativa a tus fuentes de datos, sin importar el formato o la ubicación, para crear una visión unificada y coherente de tu negocio.", useCase: "Ej: Consolidación automática de ventas desde Shopify, SAP y Excel en un único dashboard.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/data-trends-svgrepo-com.svg?v=1753854705" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
+            { id: "reporting", title: "Reportería Inteligente", description: "Sus KPIs más importantes son analizados y reportados sin intervención humana. Céntrese en decidir, no en reportar.", detailed: "Olvida los reportes manuales. Generamos análisis visuales e interactivos que se actualizan solos, destacando KPIs, tendencias y anomalías de forma proactiva.", useCase: "Ej: Un reporte de ventas diario que se envía a gerencia con insights clave sobre el rendimiento.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/statistics-svgrepo-com.svg?v=1753854082" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
+            { id: "predictive", title: "Integración Total", description: "Diseñamos soluciones a medida que conectan la IA con todos tus sistemas existentes, creando un ecosistema unificado y eficiente.", detailed: "Conectamos cada parte de tu negocio para que la IA trabaje por ti. Ahorra tiempo, reduce errores y acelera tus resultados desde el día uno.", useCase: "Ej: Cuando un cliente hace una compra, el sistema actualiza el stock, envía un correo de confirmación y registra la venta en el CRM automáticamente.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/integration-testing-svgrepo-com.svg?v=1753854082" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
+            { id: "smart workflows", title: "Workflows Inteligentes", description: "Diagramas de flujo interactivos que muestran decisiones ramificadas.", detailed: "Creamos flujos de decisión automatizados que simulan procesos de negocio, activan acciones basadas en condiciones lógicas y se visualizan como mapas dinámicos tipo árbol.", useCase: "Ej: Un flujo de aprobación automática de contratos que escala decisiones según el monto o tipo de cliente.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/workflow-svgrepo-com.svg?v=1753854081" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
+            { id: "rag agent", title: "RAG Empresarial Avanzado", description: "Documentos vivos conectados a insights en tiempo real.", detailed: "Implementamos Retrieval-Augmented Generation (RAG) para conectar tus documentos empresariales a modelos de lenguaje que responden con precisión basada en evidencia. Cada respuesta está respaldada por la fuente original.", useCase: "Ej: Un asistente interno que responde preguntas sobre políticas de la empresa citando el documento exacto.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/ai-platform-svgrepo-com.svg?v=1753854081" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` }
+
+        ];
+
+        const servicesContainer = document.getElementById('services-container');
+        services.forEach((service, index) => {
+            const cardWrapper = document.createElement('div');
+            // Make the third card span two columns on large screens
+            cardWrapper.className = `service-card-wrapper reveal ${services.length === 3 && index === 2 ? 'lg:col-span-2 lg:w-1/2 lg:mx-auto' : ''}`;
+            cardWrapper.style.transitionDelay = `${index * 100}ms`;
+            
+            cardWrapper.innerHTML = `
+                <div id="service-${service.id}" class="service-card card-3d glass-effect p-8 rounded-3xl h-full flex flex-col transition-all duration-500">
+                    <div class="flex-grow">
+                        <h3 class="text-2xl font-bold text-white">${service.title}</h3>
+                        <p class="mt-4 text-gray-300">${service.description}</p>
+                    </div>
+                    <div class="service-card-content">
+                        <p class="text-gray-400 text-sm mb-4">${service.detailed}</p>
+                        <p class="text-cyan-300 text-xs font-mono mb-4">${service.useCase}</p>
+                        <div class="h-16 flex items-center justify-center">${service.visualization}</div>
+                    </div>
+                    <button class="service-toggle-button mt-6 text-cyan-300 font-semibold flex items-center gap-2">
+                        <span>Saber más</span>
+                        <svg class="arrow-icon w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                </div>
+            `;
+            servicesContainer.appendChild(cardWrapper);
+        });
+
+        // --- Service Card Expansion Logic ---
+        servicesContainer.addEventListener('click', (e) => {
+            const button = e.target.closest('.service-toggle-button');
+            if (!button) return;
+
+            const card = button.closest('.service-card');
+            const content = card.querySelector('.service-card-content');
+            const isActive = card.classList.contains('active');
+
+            // Close all other cards
+            document.querySelectorAll('.service-card.active').forEach(activeCard => {
+                if (activeCard !== card) {
+                    activeCard.classList.remove('active');
+                    activeCard.querySelector('.service-card-content').style.maxHeight = null;
+                    activeCard.querySelector('.service-toggle-button span').textContent = 'Saber más';
+                }
+            });
+
+            // Toggle current card
+            card.classList.toggle('active');
+            if (!isActive) {
+                content.style.maxHeight = content.scrollHeight + "px";
+                button.querySelector('span').textContent = 'Cerrar';
+            } else {
+                content.style.maxHeight = null;
+                button.querySelector('span').textContent = 'Saber más';
+            }
+        });
+
+
+        // --- Intersection Observer for animations ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    const kpi = entry.target.querySelector('[data-kpi]');
+                    if (kpi && !kpi.dataset.animated) {
+                        animateKPI(kpi);
+                        kpi.dataset.animated = 'true';
+                    }
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        
+        // --- KPI Counter Animation ---
+        function animateKPI(element) {
+            const target = +element.dataset.kpi;
+            let current = 0;
+            const increment = target / 100;
+            const interval = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(interval);
+                }
+                element.textContent = Math.ceil(current);
+            }, 20);
+        }
+
+        // --- 3D Card Hover Effect ---
+        document.querySelectorAll('.card-3d').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const { width, height } = rect;
+                const rotateX = (y / height - 0.5) * -15;
+                const rotateY = (x / width - 0.5) * 15;
+                card.style.setProperty('--rotateX', `${rotateX}deg`);
+                card.style.setProperty('--rotateY', `${rotateY}deg`);
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.setProperty('--rotateX', '0deg');
+                card.style.setProperty('--rotateY', '0deg');
+            });
+        });
+
+        // --- Comparison Slider ---
+        const slider = document.querySelector('.comparison-slider');
+        if(slider) {
+            const handle = slider.querySelector('.slider-handle');
+            const afterImage = slider.querySelector('.after-image');
+            let isDragging = false;
+            
+            handle.addEventListener('mousedown', () => { isDragging = true; });
+            document.addEventListener('mouseup', () => { isDragging = false; });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const rect = slider.getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                if (x < 0) x = 0;
+                if (x > rect.width) x = rect.width;
+                const percentage = (x / rect.width) * 100;
+                handle.style.left = `${percentage}%`;
+                afterImage.style.clipPath = `polygon(${percentage}% 0, 100% 0, 100% 100%, ${percentage}% 100%)`;
+            });
+        }
+
+        // --- Header Scroll Effect ---
+        const header = document.getElementById('main-header');
+        window.addEventListener('scroll', () => {
+            header.classList.toggle('header-scrolled', window.scrollY > 50);
+        });
+    });
+    </script>
+</body>
+</html>
