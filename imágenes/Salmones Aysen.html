@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Formulario Procedimiento - Taller de Redes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .delete-btn {
+      transition: all 0.3s ease;
+    }
+    .delete-btn:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 flex items-center justify-center p-6">
+  <div class="w-full max-w-4xl p-8 rounded-3xl shadow-2xl bg-white">
+    <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Ingreso protocolos Salmones Aysen</h2>
+
+    <form action="YOUR_N8N_WEBHOOK_URL" method="POST" class="space-y-6" id="procedimientoForm">
+
+      <div class="flex flex-col gap-6">
+
+        <div>
+          <label for="titulo_protocolo" class="text-gray-700 font-semibold text-sm">Título protocolo</label>
+          <p class="text-gray-500 text-xs mb-1">Identificador único del protocolo.</p>
+          <input id="titulo_protocolo" name="titulo_protocolo" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="codigo" class="text-gray-700 font-semibold text-sm">Código</label>
+          <p class="text-gray-500 text-xs mb-1">Identificador único del procedimiento.</p>
+          <input id="codigo" name="codigo" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="fecha_creacion" class="text-gray-700 font-semibold text-sm">Fecha de Creación</label>
+          <p class="text-gray-500 text-xs mb-1">Fecha en que se creó el documento.</p>
+          <input id="fecha_creacion" name="fecha_creacion" type="date" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="version" class="text-gray-700 font-semibold text-sm">Versión</label>
+          <p class="text-gray-500 text-xs mb-1">Número de versión del procedimiento.</p>
+          <input id="version" name="version" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="fecha_modificacion" class="text-gray-700 font-semibold text-sm">Fecha de Modificación</label>
+          <p class="text-gray-500 text-xs mb-1">Última fecha en que se actualizó el documento.</p>
+          <input id="fecha_modificacion" name="fecha_modificacion" type="date" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="objetivo" class="text-gray-700 font-semibold text-sm">Objetivo</label>
+          <p class="text-gray-500 text-xs mb-1">Describe el propósito principal del procedimiento.</p>
+          <textarea id="objetivo" name="objetivo" rows="3" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div>
+          <label for="alcance" class="text-gray-700 font-semibold text-sm">Alcance</label>
+          <p class="text-gray-500 text-xs mb-1">Define a qué procesos, áreas o personas aplica este procedimiento.</p>
+          <textarea id="alcance" name="alcance" rows="3" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <!-- Marco Teórico con botón para agregar filas -->
+        <div>
+          <label class="text-gray-700 font-semibold text-sm">Marco Teórico</label>
+          <p class="text-gray-500 text-xs mb-2">Fundamentos teóricos que respaldan el procedimiento.</p>
+          
+          <div id="marcoTeoricoContainer" class="flex flex-col gap-2">
+            <div class="marco-teorico-item flex gap-2">
+              <textarea 
+                name="marco_teorico[]" 
+                rows="3" 
+                required
+                placeholder="Ingrese el marco teórico..."
+                class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            id="agregarMarcoTeoricoBtn"
+            class="mt-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl px-4 py-2 font-semibold"
+          >
+            + Agregar Marco Teórico
+          </button>
+        </div>
+
+        <!-- Definiciones con dos inputs por fila y botón para agregar -->
+        <div>
+          <label class="text-gray-700 font-semibold text-sm">Definiciones</label>
+          <p class="text-gray-500 text-xs mb-2">Términos importantes utilizados en el documento.</p>
+
+          <div id="definicionesContainer" class="flex flex-col gap-3">
+            <div class="definicion-item flex gap-2">
+              <input
+                type="text"
+                name="definiciones_termino[]"
+                placeholder="Término"
+                required
+                class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                name="definiciones_descripcion[]"
+                placeholder="Definición"
+                required
+                class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="agregarDefinicionBtn"
+            class="mt-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl px-4 py-2 font-semibold"
+          >
+            + Agregar Definición
+          </button>
+        </div>
+
+        <!-- Responsabilidades con filas y sub-filas -->
+        <div>
+          <label class="text-gray-700 font-semibold text-sm">Responsabilidades</label>
+          <p class="text-gray-500 text-xs mb-2">Roles y responsabilidades de las personas involucradas.</p>
+
+          <div id="responsabilidadesContainer" class="flex flex-col gap-4">
+            <div class="responsabilidad-item border border-gray-200 rounded-xl p-4 relative" data-resp-id="1">
+              <div class="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  name="responsabilidad_principal[]"
+                  placeholder="Rol o Cargo"
+                  required
+                  class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  class="agregarSubResponsabilidadBtn bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-xl px-4 py-2 text-sm font-semibold"
+                  data-resp-id="1"
+                >
+                  + Sub-tarea
+                </button>
+              </div>
+              <div class="sub-responsabilidades ml-8 flex flex-col gap-2" data-resp-id="1">
+                <div class="sub-resp-item flex gap-2">
+                  <input
+                    type="text"
+                    name="sub_responsabilidad_1[]"
+                    placeholder="Responsabilidad específica"
+                    required
+                    class="border border-gray-300 rounded-xl p-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="agregarResponsabilidadBtn"
+            class="mt-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl px-4 py-2 font-semibold"
+          >
+            + Agregar Responsabilidad
+          </button>
+        </div>
+
+        <!-- Materiales dinámicos -->
+        <div>
+          <label class="text-gray-700 font-semibold text-sm">Materiales</label>
+          <p class="text-gray-500 text-xs mb-2">Listado de materiales o insumos necesarios para la actividad.</p>
+
+          <div id="materialesContainer" class="flex flex-col gap-2">
+            <div class="material-item flex gap-2">
+              <input
+                name="materiales[]"
+                type="text"
+                required
+                class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Material 1"
+              />
+            </div>
+          </div>
+
+          <button type="button" id="agregarMaterialBtn"
+            class="mt-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl px-4 py-2 font-semibold"
+          >
+            + Agregar Material
+          </button>
+        </div>
+
+        <!-- Descripción de la Actividad con dos columnas -->
+        <div>
+          <label class="text-gray-700 font-semibold text-sm">Descripción de la Actividad</label>
+          <p class="text-gray-500 text-xs mb-2">Paso a paso detallado de la actividad a realizar.</p>
+
+          <div id="actividadContainer" class="flex flex-col gap-3">
+            <div class="actividad-item flex gap-2">
+              <input
+                type="text"
+                name="actividad_paso[]"
+                placeholder="Paso 1"
+                required
+                class="border border-gray-300 rounded-xl p-3 w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <textarea
+                name="actividad_descripcion[]"
+                placeholder="Descripción detallada del paso"
+                rows="2"
+                required
+                class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              ></textarea>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="agregarActividadBtn"
+            class="mt-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl px-4 py-2 font-semibold"
+          >
+            + Agregar Paso
+          </button>
+        </div>
+
+        <div>
+          <label for="registro" class="text-gray-700 font-semibold text-sm">Registro</label>
+          <p class="text-gray-500 text-xs mb-1">Documentos o registros que evidencian la ejecución del procedimiento.</p>
+          <textarea id="registro" name="registro" rows="3" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div>
+          <label class="text-gray-700 font-semibold text-sm">Control de Cambio</label>
+          <p class="text-gray-500 text-xs mb-2">Registra las versiones, fechas y descripción de los cambios realizados.</p>
+        
+          <div id="cambioContainer" class="flex flex-col gap-3">
+            <div class="cambio-item grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                name="version_cambio[]"
+                placeholder="Versión N°"
+                required
+                class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="date"
+                name="fecha_cambio[]"
+                required
+                class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  name="descripcion_cambio[]"
+                  placeholder="Descripción del Cambio"
+                  required
+                  class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+        
+          <button
+            type="button"
+            id="agregarCambioBtn"
+            class="mt-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl px-4 py-2 font-semibold"
+          >
+            + Agregar Cambio
+          </button>
+        </div>
+
+        <div>
+          <label for="elaboro" class="text-gray-700 font-semibold text-sm">Elaboró</label>
+          <p class="text-gray-500 text-xs mb-1">Nombre de la persona que elaboró el documento.</p>
+          <input id="elaboro" name="elaboro" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="cargo_elaboro" class="text-gray-700 font-semibold text-sm">Cargo (Elaboró)</label>
+          <p class="text-gray-500 text-xs mb-1">Cargo de la persona que elaboró el documento.</p>
+          <input id="cargo_elaboro" name="cargo_elaboro" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="reviso" class="text-gray-700 font-semibold text-sm">Revisó</label>
+          <p class="text-gray-500 text-xs mb-1">Nombre de la persona que revisó el documento.</p>
+          <input id="reviso" name="reviso" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="cargo_reviso" class="text-gray-700 font-semibold text-sm">Cargo (Revisó)</label>
+          <p class="text-gray-500 text-xs mb-1">Cargo de la persona que revisó el documento.</p>
+          <input id="cargo_reviso" name="cargo_reviso" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="aprobo" class="text-gray-700 font-semibold text-sm">Aprobó</label>
+          <p class="text-gray-500 text-xs mb-1">Nombre de la persona que aprobó el documento.</p>
+          <input id="aprobo" name="aprobo" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label for="cargo_aprobo" class="text-gray-700 font-semibold text-sm">Cargo (Aprobó)</label>
+          <p class="text-gray-500 text-xs mb-1">Cargo de la persona que aprobó el documento.</p>
+          <input id="cargo_aprobo" name="cargo_aprobo" type="text" required
+            class="border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+      </div>
+
+      <button
+        type="submit"
+        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 rounded-2xl hover:scale-105 transition-transform duration-300"
+      >
+        Enviar Procedimiento
+      </button>
+
+    </form>
+  </div>
+
+  <script>
+    // Función genérica para crear botón de eliminar
+    function crearBotonEliminar() {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'delete-btn bg-red-500 text-white hover:bg-red-600 rounded-xl px-3 py-2 text-sm font-semibold';
+      btn.innerHTML = '✕';
+      btn.title = 'Eliminar';
+      return btn;
+    }
+
+    // Agregar marco teórico dinámico
+    const marcoTeoricoContainer = document.getElementById('marcoTeoricoContainer');
+    const agregarMarcoTeoricoBtn = document.getElementById('agregarMarcoTeoricoBtn');
+    let marcoTeoricoCount = 1;
+
+    agregarMarcoTeoricoBtn.addEventListener('click', () => {
+      marcoTeoricoCount++;
+      const div = document.createElement('div');
+      div.className = 'marco-teorico-item flex gap-2';
+      
+      const textarea = document.createElement('textarea');
+      textarea.name = 'marco_teorico[]';
+      textarea.rows = 3;
+      textarea.required = true;
+      textarea.placeholder = `Marco teórico adicional ${marcoTeoricoCount}...`;
+      textarea.className = "border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500";
+      
+      const deleteBtn = crearBotonEliminar();
+      deleteBtn.onclick = () => div.remove();
+      
+      div.appendChild(textarea);
+      div.appendChild(deleteBtn);
+      marcoTeoricoContainer.appendChild(div);
+    });
+
+    // Agregar materiales dinámicos
+    const materialesContainer = document.getElementById('materialesContainer');
+    const agregarMaterialBtn = document.getElementById('agregarMaterialBtn');
+
+    agregarMaterialBtn.addEventListener('click', () => {
+      const count = materialesContainer.querySelectorAll('input').length;
+      const div = document.createElement('div');
+      div.className = 'material-item flex gap-2';
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = 'materiales[]';
+      input.required = true;
+      input.placeholder = `Material ${count + 1}`;
+      input.className = "border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500";
+      
+      const deleteBtn = crearBotonEliminar();
+      deleteBtn.onclick = () => div.remove();
+      
+      div.appendChild(input);
+      div.appendChild(deleteBtn);
+      materialesContainer.appendChild(div);
+    });
+
+    // Agregar definiciones dinámicas
+    const definicionesContainer = document.getElementById('definicionesContainer');
+    const agregarDefinicionBtn = document.getElementById('agregarDefinicionBtn');
+
+    agregarDefinicionBtn.addEventListener('click', () => {
+      const fila = document.createElement('div');
+      fila.className = 'definicion-item flex gap-2';
+
+      const inputTermino = document.createElement('input');
+      inputTermino.type = 'text';
+      inputTermino.name = 'definiciones_termino[]';
+      inputTermino.placeholder = 'Término';
+      inputTermino.required = true;
+      inputTermino.className = "border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+      const inputDefinicion = document.createElement('input');
+      inputDefinicion.type = 'text';
+      inputDefinicion.name = 'definiciones_descripcion[]';
+      inputDefinicion.placeholder = 'Definición';
+      inputDefinicion.required = true;
+      inputDefinicion.className = "border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500";
+      
+      const deleteBtn = crearBotonEliminar();
+      deleteBtn.onclick = () => fila.remove();
+
+      fila.appendChild(inputTermino);
+      fila.appendChild(inputDefinicion);
+      fila.appendChild(deleteBtn);
+      definicionesContainer.appendChild(fila);
+    });
+
+    // Agregar descripción de actividad dinámica
+    const actividadContainer = document.getElementById('actividadContainer');
+    const agregarActividadBtn = document.getElementById('agregarActividadBtn');
+    let actividadCount = 1;
+
+    agregarActividadBtn.addEventListener('click', () => {
+      actividadCount++;
+      const fila = document.createElement('div');
+      fila.className = 'actividad-item flex gap-2';
+
+      const inputPaso = document.createElement('input');
+      inputPaso.type = 'text';
+      inputPaso.name = 'actividad_paso[]';
+      inputPaso.placeholder = `Paso ${actividadCount}`;
+      inputPaso.required = true;
+      inputPaso.className = "border border-gray-300 rounded-xl p-3 w-32 focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+      const textareaDescripcion = document.createElement('textarea');
+      textareaDescripcion.name = 'actividad_descripcion[]';
+      textareaDescripcion.placeholder = 'Descripción detallada del paso';
+      textareaDescripcion.rows = 2;
+      textareaDescripcion.required = true;
+      textareaDescripcion.className = "border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500";
+      
+      const deleteBtn = crearBotonEliminar();
+      deleteBtn.onclick = () => fila.remove();
+
+      fila.appendChild(inputPaso);
+      fila.appendChild(textareaDescripcion);
+      fila.appendChild(deleteBtn);
+      actividadContainer.appendChild(fila);
+    });
+
+    // Agregar cambios dinámicos
+    const cambioContainer = document.getElementById('cambioContainer');
+    const agregarCambioBtn = document.getElementById('agregarCambioBtn');
+
+    agregarCambioBtn.addEventListener('click', () => {
+      const fila = document.createElement('div');
+      fila.className = 'cambio-item grid grid-cols-1 md:grid-cols-3 gap-4';
+
+      const inputVersion = document.createElement('input');
+      inputVersion.type = 'text';
+      inputVersion.name = 'version_cambio[]';
+      inputVersion.placeholder = 'Versión N°';
+      inputVersion.required = true;
+      inputVersion.className = "border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+      const inputFecha = document.createElement('input');
+      inputFecha.type = 'date';
+      inputFecha.name = 'fecha_cambio[]';
+      inputFecha.required = true;
+      inputFecha.className = "border border-gray-300 rounded-xl p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500";
+      
+      const divDescripcion = document.createElement('div');
+      divDescripcion.className = 'flex gap-2';
+
+      const inputDescripcion = document.createElement('input');
+      inputDescripcion.type = 'text';
+      inputDescripcion.name = 'descripcion_cambio[]';
+      inputDescripcion.placeholder = 'Descripción del Cambio';
+      inputDescripcion.required = true;
+      inputDescripcion.className = "border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500";
+      
+      const deleteBtn = crearBotonEliminar();
+      deleteBtn.onclick = () => fila.remove();
+      
+      divDescripcion.appendChild(inputDescripcion);
+      divDescripcion.appendChild(deleteBtn);
+
+      fila.appendChild(inputVersion);
+      fila.appendChild(inputFecha);
+      fila.appendChild(divDescripcion);
+      cambioContainer.appendChild(fila);
+    });
+
+    // Agregar responsabilidades dinámicas con sub-responsabilidades
+    const responsabilidadesContainer = document.getElementById('responsabilidadesContainer');
+    const agregarResponsabilidadBtn = document.getElementById('agregarResponsabilidadBtn');
+    let responsabilidadCount = 1;
+
+    agregarResponsabilidadBtn.addEventListener('click', () => {
+      responsabilidadCount++;
+      
+      const responsabilidadDiv = document.createElement('div');
+      responsabilidadDiv.className = 'responsabilidad-item border border-gray-200 rounded-xl p-4 relative';
+      responsabilidadDiv.setAttribute('data-resp-id', responsabilidadCount);
+      
+      // Botón de eliminar responsabilidad principal
+      const deleteMainBtn = document.createElement('button');
+      deleteMainBtn.type = 'button';
+      deleteMainBtn.className = 'absolute top-2 right-2 bg-red-500 text-white hover:bg-red-600 rounded-full px-2 py-1 text-xs';
+      deleteMainBtn.innerHTML = '✕';
+      deleteMainBtn.title = 'Eliminar responsabilidad';
+      deleteMainBtn.onclick = () => responsabilidadDiv.remove();
+      
+      responsabilidadDiv.innerHTML = `
+        <div class="flex gap-2 mb-3">
+          <input
+            type="text"
+            name="responsabilidad_principal[]"
+            placeholder="Rol o Cargo"
+            required
+            class="border border-gray-300 rounded-xl p-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="button"
+            class="agregarSubResponsabilidadBtn bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-xl px-4 py-2 text-sm font-semibold"
+            data-resp-id="${responsabilidadCount}"
+          >
+            + Sub-tarea
+          </button>
+        </div>
+        <div class="sub-responsabilidades ml-8 flex flex-col gap-2" data-resp-id="${responsabilidadCount}">
+          <div class="sub-resp-item flex gap-2">
+            <input
+              type="text"
+              name="sub_responsabilidad_${responsabilidadCount}[]"
+              placeholder="Responsabilidad específica"
+              required
+              class="border border-gray-300 rounded-xl p-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      `;
+      
+      responsabilidadDiv.appendChild(deleteMainBtn);
+      responsabilidadesContainer.appendChild(responsabilidadDiv);
+      
+      // Agregar event listener al nuevo botón de sub-responsabilidad
+      const nuevoBotonSub = responsabilidadDiv.querySelector('.agregarSubResponsabilidadBtn');
+      agregarEventoSubResponsabilidad(nuevoBotonSub);
+    });
+
+    // Función para agregar event listeners a los botones de sub-responsabilidad
+    function agregarEventoSubResponsabilidad(boton) {
+      boton.addEventListener('click', (e) => {
+        const respId = e.target.getAttribute('data-resp-id');
+        const subContainer = document.querySelector(`.sub-responsabilidades[data-resp-id="${respId}"]`);
+        
+        const subDiv = document.createElement('div');
+        subDiv.className = 'sub-resp-item flex gap-2';
+        
+        const subInput = document.createElement('input');
+        subInput.type = 'text';
+        subInput.name = `sub_responsabilidad_${respId}[]`;
+        subInput.placeholder = 'Responsabilidad específica';
+        subInput.required = true;
+        subInput.className = 'border border-gray-300 rounded-xl p-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500';
+        
+        const deleteSubBtn = document.createElement('button');
+        deleteSubBtn.type = 'button';
+        deleteSubBtn.className = 'bg-red-500 text-white hover:bg-red-600 rounded-xl px-2 py-1 text-xs';
+        deleteSubBtn.innerHTML = '✕';
+        deleteSubBtn.onclick = () => {
+          // Verificar si es el último elemento
+          const items = subContainer.querySelectorAll('.sub-resp-item');
+          if (items.length > 1) {
+            subDiv.remove();
+          } else {
+            alert('Debe mantener al menos una sub-responsabilidad');
+          }
+        };
+        
+        subDiv.appendChild(subInput);
+        subDiv.appendChild(deleteSubBtn);
+        subContainer.appendChild(subDiv);
+      });
+    }
+
+    // Agregar event listener al botón inicial de sub-responsabilidad
+    const botonSubInicial = document.querySelector('.agregarSubResponsabilidadBtn');
+    agregarEventoSubResponsabilidad(botonSubInicial);
+  </script>
+</body>
+</html>
