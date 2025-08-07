@@ -108,19 +108,26 @@
 
       <!-- 5. RESPONSABILIDADES -->
       <div>
-        <label class="text-gray-700 font-semibold text-sm">5. RESPONSABILIDADES</label>
-        <div id="responsabilidadesContainer" class="space-y-2">
-          <div class="responsabilidad-item flex gap-2">
-            <input type="text" class="responsabilidad-input flex-1 border rounded-xl p-3" 
-              placeholder="Ingrese responsabilidad...">
-            <button type="button" class="remove-resp text-red-500 px-2" style="display:none">✕</button>
-          </div>
-        </div>
-        <button type="button" id="addResponsabilidad" class="mt-2 bg-gray-100 rounded-xl px-4 py-2 text-sm">
-          + Agregar Responsabilidad
+  <label class="text-gray-700 font-semibold text-sm">5. RESPONSABILIDADES</label>
+  <div id="responsabilidadesContainer" class="space-y-2">
+    <!-- Responsabilidad principal por defecto -->
+    <div class="responsabilidad-item flex flex-col gap-2 p-2 border rounded-xl bg-gray-50 mb-2">
+      <div class="flex gap-2">
+        <input type="text" class="responsabilidad-input flex-1 border rounded-xl p-3" 
+          placeholder="Ingrese responsabilidad principal...">
+        <button type="button" class="add-subresponsabilidad bg-blue-100 text-blue-700 rounded px-3 py-1 text-sm">
+          + Subresponsabilidad
         </button>
-        <input type="hidden" name="responsabilidades" id="responsabilidades_formatted">
+        <button type="button" class="remove-resp text-red-500 px-2" style="display:none">✕</button>
       </div>
+      <div class="subresponsabilidades-container pl-8"></div>
+    </div>
+  </div>
+  <button type="button" id="addResponsabilidad" class="mt-2 bg-gray-100 rounded-xl px-4 py-2 text-sm">
+    + Agregar Responsabilidad
+  </button>
+  <input type="hidden" name="responsabilidades" id="responsabilidades_formatted">
+</div>
 
       <!-- 6. MATERIALES -->
       <div>
@@ -322,26 +329,63 @@
       updateRemoveButtons(container, '.definicion-item', '.remove-def');
     });
 
-    // RESPONSABILIDADES
-    document.getElementById('addResponsabilidad').addEventListener('click', () => {
-      const container = document.getElementById('responsabilidadesContainer');
-      const newResp = document.createElement('div');
-      newResp.className = 'responsabilidad-item flex gap-2';
-      newResp.innerHTML = `
-        <input type="text" class="responsabilidad-input flex-1 border rounded-xl p-3" 
-          placeholder="Ingrese responsabilidad...">
-        <button type="button" class="remove-resp text-red-500 px-2">✕</button>
-      `;
-      container.appendChild(newResp);
-      
-      newResp.querySelector('.remove-resp').addEventListener('click', function() {
-        newResp.remove();
-        updateRemoveButtons(container, '.responsabilidad-item', '.remove-resp');
-      });
-      
-      updateRemoveButtons(container, '.responsabilidad-item', '.remove-resp');
-    });
+    // RESPONSABILIDADES - NUEVA LÓGICA
 
+function addSubresponsabilidad(container) {
+  const newSub = document.createElement('div');
+  newSub.className = 'flex gap-2 mb-1 subresponsabilidad-item';
+  newSub.innerHTML = `
+    <input type="text" class="subresponsabilidad-input flex-1 border rounded-xl p-3" 
+      placeholder="Subresponsabilidad...">
+    <button type="button" class="remove-subresponsabilidad text-red-500 px-2">✕</button>
+  `;
+  container.appendChild(newSub);
+
+  newSub.querySelector('.remove-subresponsabilidad').addEventListener('click', function() {
+    newSub.remove();
+  });
+}
+
+// Handler para agregar responsabilidad principal
+document.getElementById('addResponsabilidad').addEventListener('click', () => {
+  const container = document.getElementById('responsabilidadesContainer');
+  const newResp = document.createElement('div');
+  newResp.className = 'responsabilidad-item flex flex-col gap-2 p-2 border rounded-xl bg-gray-50 mb-2';
+  newResp.innerHTML = `
+    <div class="flex gap-2">
+      <input type="text" class="responsabilidad-input flex-1 border rounded-xl p-3" 
+        placeholder="Ingrese responsabilidad principal...">
+      <button type="button" class="add-subresponsabilidad bg-blue-100 text-blue-700 rounded px-3 py-1 text-sm">
+        + Subresponsabilidad
+      </button>
+      <button type="button" class="remove-resp text-red-500 px-2">✕</button>
+    </div>
+    <div class="subresponsabilidades-container pl-8"></div>
+  `;
+  container.appendChild(newResp);
+
+  // Agregar subresponsabilidad
+  newResp.querySelector('.add-subresponsabilidad').addEventListener('click', function() {
+    const subContainer = newResp.querySelector('.subresponsabilidades-container');
+    addSubresponsabilidad(subContainer);
+  });
+
+  // Eliminar responsabilidad
+  newResp.querySelector('.remove-resp').addEventListener('click', function() {
+    newResp.remove();
+    updateRemoveButtons(container, '.responsabilidad-item', '.remove-resp');
+  });
+
+  updateRemoveButtons(container, '.responsabilidad-item', '.remove-resp');
+});
+
+// Handler para subresponsabilidad del primer ítem
+document.querySelectorAll('.add-subresponsabilidad').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const subContainer = this.closest('.responsabilidad-item').querySelector('.subresponsabilidades-container');
+    addSubresponsabilidad(subContainer);
+  });
+});
     // MATERIALES
     document.getElementById('addMaterial').addEventListener('click', () => {
       const container = document.getElementById('materialesContainer');
@@ -561,13 +605,14 @@
         .join('\n');
       document.getElementById('definiciones_formatted').value = definicionesText;
       
-      // Serializar Responsabilidades - SIN VIÑETAS
-      const respItems = document.querySelectorAll('.responsabilidad-input');
-      const responsabilidadesText = Array.from(respItems)
-        .map((input) => input.value.trim())
-        .filter(text => text !== '')
-        .join('\n');
-      document.getElementById('responsabilidades_formatted').value = responsabilidadesText;
+
+// Serializar Responsabilidades - SIN VIÑETAS
+const respItems = document.querySelectorAll('.responsabilidad-input');
+const responsabilidadesText = Array.from(respItems)
+  .map((input) => input.value.trim())
+  .filter(text => text !== '')
+  .join('\n');
+document.getElementById('responsabilidades_formatted').value = responsabilidadesText;
       
       // Serializar Materiales - SIN VIÑETAS
       const matItems = document.querySelectorAll('.material-input');
