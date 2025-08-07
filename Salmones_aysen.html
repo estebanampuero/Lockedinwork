@@ -606,13 +606,18 @@ document.querySelectorAll('.add-subresponsabilidad').forEach(btn => {
       document.getElementById('definiciones_formatted').value = definicionesText;
       
 
-// Serializar Responsabilidades - SIN VIÑETAS
-const respItems = document.querySelectorAll('.responsabilidad-input');
-const responsabilidadesText = Array.from(respItems)
-  .map((input) => input.value.trim())
-  .filter(text => text !== '')
-  .join('\n');
-document.getElementById('responsabilidades_formatted').value = responsabilidadesText;
+// Serializar RESPONSABILIDADES como array de objetos [{responsabilidad, subresponsabilidades:[]}]
+const responsabilidadItems = document.querySelectorAll('.responsabilidad-item');
+const responsabilidadesArray = Array.from(responsabilidadItems).map(item => {
+  const principal = item.querySelector('.responsabilidad-input').value.trim();
+  const subItems = item.querySelectorAll('.subresponsabilidad-input');
+  const subresponsabilidades = Array.from(subItems)
+    .map(sub => sub.value.trim())
+    .filter(text => text);
+  return principal ? { responsabilidad: principal, subresponsabilidades } : null;
+}).filter(obj => obj);
+
+document.getElementById('responsabilidades_formatted').value = JSON.stringify(responsabilidadesArray, null, 2);
       
       // Serializar Materiales - SIN VIÑETAS
       const matItems = document.querySelectorAll('.material-input');
