@@ -1,574 +1,672 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LockedInWork - IA que no solo habla, actúa.</title>
+    <title>Dashboard de Reservas</title>
     
-    <!-- Tailwind CSS -->
+    <!-- TailwindCSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts: Space Grotesk -->
+    <!-- SheetJS (xlsx) CDN para leer archivos Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>">
-
     <style>
-        /* Base styles */
         body {
-            font-family: 'Space Grotesk', sans-serif;
-            background-color: #0d0d1a; /* Deep blue/black */
-            color: #E5E7EB;
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* gray-50 */
         }
-
-        /* Particles.js background */
-        #particles-js {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: -1;
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
         }
-
-        /* Glassmorphism effect */
-        .glass-effect {
-            background: rgba(13, 13, 26, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
-        /* Header scroll effect */
-        .header-scrolled {
-            background-color: rgba(13, 13, 26, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom-color: rgba(255, 255, 255, 0.1);
+        .day-selected {
+            background-color: #4f46e5 !important; /* indigo-600 */
+            color: white !important;
+            font-weight: bold;
         }
-
-        /* Scroll-triggered animations */
-        .reveal {
-            opacity: 0;
-            transform: translateY(40px);
-            transition: opacity 0.8s ease, transform 0.8s ease;
+        .slot-selected {
+            background-color: #818cf8; /* indigo-400 */
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-        .reveal.visible {
-            opacity: 1;
-            transform: translateY(0);
+        .slot-occupied {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #94a3b8; /* slate-400 */
+            cursor: not-allowed;
+            text-decoration: line-through;
         }
-
-        /* Pulsing CTA */
-        .cta-pulse {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
-        }
-
-        /* 3D hover effect for cards */
-        .card-3d {
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-            transform-style: preserve-3d;
-        }
-        .card-3d:hover:not(.active) {
-            transform: perspective(1000px) rotateY(var(--rotateY)) rotateX(var(--rotateX)) scale3d(1.05, 1.05, 1.05);
-            box-shadow: 0px 20px 40px -10px rgba(0, 0, 0, 0.4);
-        }
-
-        /* Before/After slider */
-        .comparison-slider {
-            position: relative;
-            width: 100%;
-            overflow: hidden;
-        }
-        .comparison-slider .after-image {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
-        }
-        .comparison-slider .slider-handle {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 100%;
-            background: #67E8F9; /* cyan-300 */
-            cursor: ew-resize;
-        }
-        .comparison-slider .slider-handle::before {
-            content: '↔';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            background: #67E8F9;
-            color: #0d0d1a;
-            border-radius: 50%;
+        /* Estilos para la vista multi-box */
+        #time-slots-wrapper {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
+            gap: 1rem; /* Espacio reducido para móviles */
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #cbd5e1 #f1f5f9; /* Firefox */
         }
-
-        /* Expandable Service Card */
-        .service-card-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1), padding 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        @media (min-width: 640px) {
+            #time-slots-wrapper {
+                gap: 1.5rem; /* Espacio original para pantallas más grandes */
+            }
         }
-        .service-card.active .service-card-content {
-            padding-top: 1.5rem;
+        .box-column {
+            flex: 0 0 130px; /* Ancho ligeramente reducido para mejor vista en móvil */
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem; /* Espacio entre horarios */
         }
-        .service-card.active .arrow-icon {
-            transform: rotate(180deg);
+        .box-title {
+            font-weight: 600;
+            color: #334155; /* slate-700 */
+            text-align: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0; /* slate-200 */
+            margin-bottom: 0.5rem;
         }
-        
-        /* Mini visualization animations */
-        .voice-wave span {
-            display: inline-block;
-            width: 4px;
-            height: 20px;
-            margin: 0 2px;
-            background-color: #67E8F9;
-            animation: wave 1.2s infinite ease-in-out;
-        }
-        .voice-wave span:nth-child(2) { animation-delay: -1.0s; }
-        .voice-wave span:nth-child(3) { animation-delay: -0.8s; }
-        .voice-wave span:nth-child(4) { animation-delay: -0.6s; }
-        .voice-wave span:nth-child(5) { animation-delay: -0.4s; }
-        @keyframes wave {
-            0%, 40%, 100% { transform: scaleY(0.4); }
-            20% { transform: scaleY(1.0); }
-        }
+        /* Scrollbar styles for Webkit browsers */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased text-slate-700">
 
-    <div class="relative w-full">
-        <!-- Particle Background -->
-        <div id="particles-js"></div>
+    <!-- ===== LOGO DE LOCKEDINWORK INTEGRADO ===== -->
+    <a href="https://lockedinwork.com" target="_blank" rel="noopener noreferrer" class="fixed top-4 right-4 z-50 text-lg font-bold text-slate-800 opacity-40 hover:opacity-100 transition-opacity duration-300">
+        LockedIn<span class="text-indigo-600">Work</span>
+    </a>
 
-        <!-- Header -->
-        <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-transparent">
-            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-                <a href="#" class="text-2xl font-bold text-white">LockedIn<span class="text-cyan-300">Work</span></a>
-                <nav class="hidden md:flex items-center space-x-8">
-                    <a href="#differentiator" class="text-gray-300 hover:text-white transition-colors">Diferenciador</a>
-                    <a href="#services" class="text-gray-300 hover:text-white transition-colors">Servicios</a>
-                    <a href="#value-prop" class="text-gray-300 hover:text-white transition-colors">Resultados</a>
-                    <a href="#contact" class="bg-cyan-400 text-black font-semibold px-5 py-2 rounded-lg hover:bg-cyan-300 transition-colors">Solicita una Demo</a>
-                </nav>
-                <button class="md:hidden text-white">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
-                </button>
-            </div>
+    <!-- Se añade padding-bottom para que el botón fijo no oculte contenido -->
+    <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl pb-24 sm:pb-8">
+        
+        <header class="mb-8">
+            <!-- Título responsivo -->
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">Agendar Horas</h1>
+            <p class="text-slate-500 mt-1">Selecciona la ubicación, el médico y elige los bloques horarios disponibles.</p>
         </header>
 
-        <main class="relative z-10">
-            <!-- Hero Section -->
-            <section class="min-h-screen flex items-center justify-center text-center px-4">
-                <div class="max-w-4xl mx-auto">
-                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tighter reveal">
-                        IA que no solo habla, <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-fuchsia-500">actúa.</span>
-                    </h1>
-                    <p class="mt-6 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto reveal" style="transition-delay: 150ms;">
-                        LockedInWork integra inteligencia real con tus datos y sistemas.
-                    </p>
-                    <div class="mt-12 reveal" style="transition-delay: 300ms;">
-                        <a href="#differentiator" class="cta-pulse bg-cyan-400 text-black font-bold px-10 py-4 rounded-xl hover:bg-cyan-300 transition-all duration-300 transform hover:scale-105">
-                            Explora el futuro
-                        </a>
-                    </div>
-                </div>
-            </section>
+        <!-- Filtros Superiores (Ya eran responsivos con grid-cols-1 md:grid-cols-3, se mantiene) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 sm:p-6 bg-white rounded-lg shadow-md">
+            <div>
+                <label for="cae-select" class="block text-sm font-medium text-slate-600 mb-1">CAE</label>
+                <select id="cae-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                    <option value="">Cargando...</option>
+                </select>
+            </div>
+            <div>
+                <label for="box-select" class="block text-sm font-medium text-slate-600 mb-1">BOX (Filtro)</label>
+                <select id="box-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" disabled>
+                    <option value="">Selecciona un CAE</option>
+                </select>
+            </div>
+            <div>
+                <label for="medico-select" class="block text-sm font-medium text-slate-600 mb-1">MÉDICO</label>
+                <select id="medico-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" disabled>
+                    <option value="">Cargando...</option>
+                </select>
+                <input type="text" id="otro-medico-input" placeholder="Nombre del nuevo médico" class="w-full p-2 border border-slate-300 rounded-lg mt-2 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition hidden">
+            </div>
+        </div>
 
-            <!-- Differentiator Section -->
-<section id="differentiator" class="py-16 sm:py-24 lg:py-32">
-    <div class="container mx-auto px-4 sm:px-6">
-        <div class="text-center max-w-4xl mx-auto reveal">
-            <h2 class="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-12 sm:mb-16">
-                Otros venden interfaces. <br class="hidden sm:block"/> 
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-fuchsia-500">
-                    Nosotros implementamos inteligencia.
-                </span>
-            </h2>
-            
-            <!-- Comparison Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
-                <!-- Chatbots Típicos -->
-                <div class="glass-effect rounded-2xl p-6 sm:p-8 border border-red-500/20 hover:border-red-500/40 transition-all duration-300 reveal" style="transition-delay: 150ms;">
-                    <div class="mb-4">
-                        <span class="text-4xl">❌</span>
-                    </div>
-                    <h3 class="text-xl sm:text-2xl font-bold text-red-400 mb-4">Chatbots Típicos</h3>
-                    <ul class="space-y-3 text-left">
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400 mt-1">×</span>
-                            <span class="text-sm sm:text-base text-gray-300">Respuestas genéricas y predefinidas</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400 mt-1">×</span>
-                            <span class="text-sm sm:text-base text-gray-300">Sin acceso a datos reales de tu empresa</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400 mt-1">×</span>
-                            <span class="text-sm sm:text-base text-gray-300">Limitados a conversaciones simples</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400 mt-1">×</span>
-                            <span class="text-sm sm:text-base text-gray-300">No pueden ejecutar acciones</span>
-                        </li>
-                    </ul>
+        <!-- Calendario y Bloques Horarios (Ajustado para apilarse en pantallas < xl) -->
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+            <div class="xl:col-span-2 bg-white p-4 sm:p-6 rounded-lg shadow-md">
+                <div id="calendar-header" class="flex items-center justify-between mb-4">
+                    <button id="prev-month" class="p-2 rounded-full hover:bg-slate-100 transition"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                    <h2 id="month-year" class="text-lg sm:text-xl font-semibold text-slate-800"></h2>
+                    <button id="next-month" class="p-2 rounded-full hover:bg-slate-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
                 </div>
-
-                <!-- IA Conectada -->
-                <div class="glass-effect rounded-2xl p-6 sm:p-8 border border-cyan-400/30 hover:border-cyan-400/60 transition-all duration-300 transform hover:scale-105 reveal" style="transition-delay: 300ms;">
-                    <div class="mb-4">
-                        <span class="text-4xl">✨</span>
-                    </div>
-                    <h3 class="text-xl sm:text-2xl font-bold text-cyan-300 mb-4">IA Conectada LockedInWork</h3>
-                    <ul class="space-y-3 text-left">
-                        <li class="flex items-start gap-3">
-                            <span class="text-cyan-400 mt-1">✓</span>
-                            <span class="text-sm sm:text-base text-gray-200">Acceso total a tus datos y sistemas</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-cyan-400 mt-1">✓</span>
-                            <span class="text-sm sm:text-base text-gray-200">Decisiones informadas en tiempo real</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-cyan-400 mt-1">✓</span>
-                            <span class="text-sm sm:text-base text-gray-200">Automatiza tareas y procesos complejos</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-cyan-400 mt-1">✓</span>
-                            <span class="text-sm sm:text-base text-gray-200">ROI medible desde el día uno</span>
-                        </li>
-                    </ul>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center">
+                    <!-- Días de la semana se generan con JS -->
                 </div>
             </div>
-
-            <!-- Bottom CTA or statement -->
-            <div class="mt-12 reveal" style="transition-delay: 450ms;">
-                <p class="text-lg sm:text-xl text-gray-300 mb-8">
-                    La diferencia entre <span class="text-red-400">hablar</span> y <span class="text-cyan-400">transformar</span> tu negocio.
-                </p>
-                <a href="#services" class="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors">
-                    <span>Descubre cómo funciona</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                    </svg>
-                </a>
+            <div class="xl:col-span-3 bg-white p-4 sm:p-6 rounded-lg shadow-md fade-in" id="time-slots-container-wrapper">
+                <h3 class="text-lg sm:text-xl font-semibold text-slate-800 mb-1">Horarios Disponibles</h3>
+                <p id="selected-day-text" class="text-slate-500 mb-4 text-sm sm:text-base">Selecciona un CAE y un día en el calendario</p>
+                <div id="time-slots-wrapper" class="max-h-96 pr-2">
+                    <!-- Las columnas de los boxes se generarán aquí -->
+                </div>
             </div>
+        </div>
+
+        <!-- Botón de Reservar Responsivo -->
+        <button id="reservar-btn" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-8 sm:right-8 sm:w-auto z-40 bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-indigo-700 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300 text-center">Reservar</button>
+        
+        <!-- Notificación Toast Responsiva -->
+        <div id="toast" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-auto z-50 p-4 rounded-lg shadow-xl text-white transition-transform transform translate-x-full sm:translate-x-[120%]" role="alert">
+            <span id="toast-message"></span>
         </div>
     </div>
-</section>
-
-            <!-- Services Section -->
-            <section id="services" class="py-24 sm:py-32">
-                <div class="container mx-auto px-6">
-                    <div class="text-center max-w-3xl mx-auto reveal">
-                        <h2 class="text-3xl md:text-5xl font-bold text-white">Servicios Especializados</h2>
-                    </div>
-                    <div id="services-container" class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <!-- Service Cards will be populated by JS -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Value Proposition -->
-            <section id="value-prop" class="py-24 sm:py-32">
-                <div class="container mx-auto px-6 text-center">
-                    <div class="max-w-4xl mx-auto reveal">
-                        <blockquote class="text-3xl md:text-5xl font-bold text-white leading-tight">
-                            "No vendemos interfaces que conversan. Creamos sistemas que <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-fuchsia-500">piensan, entienden y actúan.</span>"
-                        </blockquote>
-                    </div>
-                    <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        <div class="reveal glass-effect p-8 rounded-2xl text-center">
-                            <p class="text-5xl font-bold text-cyan-300" data-kpi="90">0</p>
-                            <p class="mt-2 text-gray-300">% menos tiempo en reportería</p>
-                        </div>
-                        <div class="reveal glass-effect p-8 rounded-2xl text-center" style="transition-delay: 150ms;">
-                            <p class="text-5xl font-bold text-cyan-300" data-kpi="25">0</p>
-                            <p class="mt-2 text-gray-300">% más eficiencia en decisiones</p>
-                        </div>
-                        <div class="reveal glass-effect p-8 rounded-2xl text-center" style="transition-delay: 300ms;">
-                            <p class="text-5xl font-bold text-cyan-300" data-kpi="100">0</p>
-                            <p class="mt-2 text-gray-300">% oportunidades críticas identificadas</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Contact/Chat Section -->
-<section id="contact" class="py-16 sm:py-24 lg:py-32">
-    <div class="container mx-auto px-4 sm:px-6">
-        <div class="glass-effect border-cyan-400/20 rounded-2xl sm:rounded-3xl p-8 sm:p-12 lg:p-16 max-w-2xl mx-auto reveal text-center">
-            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
-                ¿Listo para transformar tu negocio?
-            </h2>
-            <p class="text-gray-300 text-sm sm:text-base lg:text-lg mb-8 max-w-lg mx-auto">
-                Habla con nuestro equipo de expertos en IA y descubre cómo podemos ayudarte a automatizar y optimizar tus procesos.
-            </p>
-            
-            <!-- Chat Button -->
-            <button id="chat-button" class="group relative inline-flex items-center justify-center gap-3 bg-cyan-400 hover:bg-cyan-300 text-black font-bold px-8 sm:px-10 py-4 sm:py-5 rounded-xl sm:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-cyan-400/25">
-                <!-- Chat Icon -->
-                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                <span class="text-base sm:text-lg">Iniciar Conversación</span>
-                
-                <!-- Pulsing dot indicator -->
-                <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </span>
-            </button>
-            
-            <!-- Alternative contact options -->
-            <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm text-gray-400">
-                <a href="https://wa.me/1234567890" class="flex items-center gap-2 hover:text-cyan-300 transition-colors">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                    </svg>
-                    WhatsApp
-                </a>
-                <span class="hidden sm:inline text-gray-600">•</span>
-                <a href="mailto:hola@lockedinwork.com" class="flex items-center gap-2 hover:text-cyan-300 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    Email
-                </a>
-            </div>
-            
-            <!-- Response time indicator -->
-            <p class="mt-6 text-xs sm:text-sm text-gray-500">
-                <span class="inline-flex items-center gap-1">
-                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                    Respondemos en menos de 5 minutos
-                </span>
-            </p>
-        </div>
-    </div>
-</section>
-
-<!-- Chat Widget Placeholder (ejemplo con estilos) -->
-<div id="chat-widget" class="fixed bottom-4 right-4 z-50 hidden">
-    <!-- Aquí iría tu widget de chat real (Intercom, Crisp, Tawk.to, etc.) -->
-    <div class="bg-white rounded-2xl shadow-2xl w-80 sm:w-96 h-96 sm:h-[500px] flex flex-col glass-effect">
-        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-4 rounded-t-2xl">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                        <span class="text-xl">🤖</span>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold">LockedInWork AI</h3>
-                        <p class="text-xs opacity-90">En línea ahora</p>
-                    </div>
-                </div>
-                <button id="close-chat" class="p-1 hover:bg-white/20 rounded-lg transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <div class="flex-1 p-4 overflow-y-auto">
-            <div class="text-center text-gray-500 mt-8">
-                <p class="text-sm">¡Hola! 👋</p>
-                <p class="text-sm mt-2">¿En qué podemos ayudarte hoy?</p>
-            </div>
-        </div>
-        <div class="p-4 border-t border-gray-200">
-            <input type="text" placeholder="Escribe tu mensaje..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400">
-        </div>
-    </div>
-</div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="border-t border-white/10 py-12 relative z-10">
-            <div class="container mx-auto px-6 text-center text-gray-500">
-                <div class="flex justify-center space-x-6 mb-6">
-                    <a href="#" class="hover:text-cyan-300 transition-colors">Twitter</a>
-                    <a href="#" class="hover:text-cyan-300 transition-colors">LinkedIn</a>
-                    <a href="#" class="hover:text-cyan-300 transition-colors">GitHub</a>
-                </div>
-                <p>&copy; 2025 LockedInWork. Todos los derechos reservados.</p>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Particles.js script -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Initialize Particles.js ---
-        particlesJS('particles-js', {
-            "particles": { "number": { "value": 440, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#4f46e5" }, "shape": { "type": "circle" }, "opacity": { "value": 0.3, "random": true }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#a78bfa", "opacity": 0.15, "width": 1 }, "move": { "enable": true, "speed": 1, "direction": "none", "out_mode": "out" } },
-            "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": false } }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.3 } } } },
-            "retina_detect": true
-        });
 
-        // --- Service Cards Data ---
-        const services = [
-            { id: "conversational", title: "Agentes que Actúan", description: "Acceso y ejecución de tareas en sus CRMs, bases de datos y Google Sheets. Toman decisiones o las escalan de forma inteligente.", detailed: "Creamos agentes que dialogan con naturalidad, acceden a bases de conocimiento en tiempo real y resuelven problemas complejos, mejorando la experiencia del cliente y la eficiencia interna.", useCase: "Ej: Un asistente de soporte técnico que guía a un usuario consultando manuales y el historial del CRM.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full text-5xl animate-pulse">🤖</div>` },
-            { id: "integration", title: "Análisis de Interacciones", description: "No pierda la riqueza de la comunicación. Le entregamos informes con los insights de las conversaciones para que entienda y mejore.", detailed: "Nuestra IA se conecta de forma nativa a tus fuentes de datos, sin importar el formato o la ubicación, para crear una visión unificada y coherente de tu negocio.", useCase: "Ej: Consolidación automática de ventas desde Shopify, SAP y Excel en un único dashboard.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/data-trends-svgrepo-com.svg?v=1753854705" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
-            { id: "reporting", title: "Reportería Inteligente", description: "Sus KPIs más importantes son analizados y reportados sin intervención humana. Céntrese en decidir, no en reportar.", detailed: "Olvida los reportes manuales. Generamos análisis visuales e interactivos que se actualizan solos, destacando KPIs, tendencias y anomalías de forma proactiva.", useCase: "Ej: Un reporte de ventas diario que se envía a gerencia con insights clave sobre el rendimiento.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/statistics-svgrepo-com.svg?v=1753854082" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
-            { id: "predictive", title: "Integración Total", description: "Diseñamos soluciones a medida que conectan la IA con todos tus sistemas existentes, creando un ecosistema unificado y eficiente.", detailed: "Conectamos cada parte de tu negocio para que la IA trabaje por ti. Ahorra tiempo, reduce errores y acelera tus resultados desde el día uno.", useCase: "Ej: Cuando un cliente hace una compra, el sistema actualiza el stock, envía un correo de confirmación y registra la venta en el CRM automáticamente.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/integration-testing-svgrepo-com.svg?v=1753854082" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
-            { id: "smart workflows", title: "Workflows Inteligentes", description: "Diagramas de flujo interactivos que muestran decisiones ramificadas.", detailed: "Creamos flujos de decisión automatizados que simulan procesos de negocio, activan acciones basadas en condiciones lógicas y se visualizan como mapas dinámicos tipo árbol.", useCase: "Ej: Un flujo de aprobación automática de contratos que escala decisiones según el monto o tipo de cliente.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/workflow-svgrepo-com.svg?v=1753854081" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` },
-            { id: "rag agent", title: "RAG Empresarial Avanzado", description: "Documentos vivos conectados a insights en tiempo real.", detailed: "Implementamos Retrieval-Augmented Generation (RAG) para conectar tus documentos empresariales a modelos de lenguaje que responden con precisión basada en evidencia. Cada respuesta está respaldada por la fuente original.", useCase: "Ej: Un asistente interno que responde preguntas sobre políticas de la empresa citando el documento exacto.", visualization: `<div class="flex items-center justify-center h-20 w-20 bg-cyan-900/20 rounded-full animate-pulse overflow-visible"><img src="https://cdn.shopify.com/s/files/1/0663/9940/4205/files/ai-platform-svgrepo-com.svg?v=1753854081" alt="Gráfico" class="h-10 w-10 object-contain p-1" /></div>` }
+        // --- CONFIGURACIÓN (sin cambios) ---
+        const SHEET_ID = '1f3BMghdIXySvO7IVb0V2xXnYb1mXta4feq-MZQ-iNF0';
+        const GID_CONFIG = '0';
+        const GID_MEDICOS = '1913556286';
 
-        ];
+        const URL_CONFIG = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx&gid=${GID_CONFIG}`;
+        const URL_MEDICOS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx&gid=${GID_MEDICOS}`;
+        const API_RESERVAS_URL = 'https://agentes-liw-n8n-test.6tpykr.easypanel.host/webhook/a3398cd3-14aa-4a54-9c64-abecb95d88e8';
+        const API_CHECK_URL = 'https://agentes-liw-n8n-test.6tpykr.easypanel.host/webhook/2ef1ad96-a7b2-4669-8a8f-d1874781f147';
+        
+        // --- REFERENCIAS AL DOM (sin cambios) ---
+        const caeSelect = document.getElementById('cae-select');
+        const boxSelect = document.getElementById('box-select');
+        const medicoSelect = document.getElementById('medico-select');
+        const otroMedicoInput = document.getElementById('otro-medico-input');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYearEl = document.getElementById('month-year');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const timeSlotsWrapper = document.getElementById('time-slots-wrapper');
+        const selectedDayText = document.getElementById('selected-day-text');
+        const timeSlotsContainer = document.getElementById('time-slots-container-wrapper');
+        const reservarBtn = document.getElementById('reservar-btn');
+        const toastEl = document.getElementById('toast');
+        const toastMessageEl = document.getElementById('toast-message');
 
-        const servicesContainer = document.getElementById('services-container');
-        services.forEach((service, index) => {
-            const cardWrapper = document.createElement('div');
-            // Make the third card span two columns on large screens
-            cardWrapper.className = `service-card-wrapper reveal ${services.length === 3 && index === 2 ? 'lg:col-span-2 lg:w-1/2 lg:mx-auto' : ''}`;
-            cardWrapper.style.transitionDelay = `${index * 100}ms`;
-            
-            cardWrapper.innerHTML = `
-                <div id="service-${service.id}" class="service-card card-3d glass-effect p-8 rounded-3xl h-full flex flex-col transition-all duration-500">
-                    <div class="flex-grow">
-                        <h3 class="text-2xl font-bold text-white">${service.title}</h3>
-                        <p class="mt-4 text-gray-300">${service.description}</p>
-                    </div>
-                    <div class="service-card-content">
-                        <p class="text-gray-400 text-sm mb-4">${service.detailed}</p>
-                        <p class="text-cyan-300 text-xs font-mono mb-4">${service.useCase}</p>
-                        <div class="h-16 flex items-center justify-center">${service.visualization}</div>
-                    </div>
-                    <button class="service-toggle-button mt-6 text-cyan-300 font-semibold flex items-center gap-2">
-                        <span>Saber más</span>
-                        <svg class="arrow-icon w-4 h-4 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                    </button>
-                </div>
-            `;
-            servicesContainer.appendChild(cardWrapper);
-        });
+        // --- ESTADO DE LA APLICACIÓN (sin cambios) ---
+        let configData = [];
+        let medicosList = [];
+        let currentDate = new Date();
+        let selectedDate = null;
+        let selectedTimeSlots = new Set();
+        let selectedBoxForReservation = null;
+        let allOccupiedSlots = new Map();
 
-        // --- Service Card Expansion Logic ---
-        servicesContainer.addEventListener('click', (e) => {
-            const button = e.target.closest('.service-toggle-button');
-            if (!button) return;
+        // --- INICIALIZACIÓN (sin cambios) ---
+        const init = async () => {
+            timeSlotsContainer.style.display = 'none';
+            await loadAndPopulateFilters();
+            renderCalendar();
+            setupEventListeners();
+        };
 
-            const card = button.closest('.service-card');
-            const content = card.querySelector('.service-card-content');
-            const isActive = card.classList.contains('active');
-
-            // Close all other cards
-            document.querySelectorAll('.service-card.active').forEach(activeCard => {
-                if (activeCard !== card) {
-                    activeCard.classList.remove('active');
-                    activeCard.querySelector('.service-card-content').style.maxHeight = null;
-                    activeCard.querySelector('.service-toggle-button span').textContent = 'Saber más';
-                }
-            });
-
-            // Toggle current card
-            card.classList.toggle('active');
-            if (!isActive) {
-                content.style.maxHeight = content.scrollHeight + "px";
-                button.querySelector('span').textContent = 'Cerrar';
-            } else {
-                content.style.maxHeight = null;
-                button.querySelector('span').textContent = 'Saber más';
-            }
-        });
-
-
-        // --- Intersection Observer for animations ---
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    const kpi = entry.target.querySelector('[data-kpi]');
-                    if (kpi && !kpi.dataset.animated) {
-                        animateKPI(kpi);
-                        kpi.dataset.animated = 'true';
+        // --- CARGA DE DATOS (sin cambios) ---
+        const fetchSheetData = async (url, requiredColumns) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Error al descargar datos. Revisa la URL y los permisos.`);
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                if (jsonData.length > 0) {
+                    for (const col of requiredColumns) {
+                        if (!(col in jsonData[0])) throw new Error(`La columna "${col}" no se encontró en la hoja correspondiente.`);
                     }
                 }
-            });
-        }, { threshold: 0.1 });
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+                return jsonData;
+            } catch (error) {
+                console.error(`Error en fetchSheetData para ${url}:`, error);
+                throw error;
+            }
+        };
+
+        const loadAndPopulateFilters = async () => {
+            try {
+                [configData, medicosList] = await Promise.all([
+                    fetchSheetData(URL_CONFIG, ['cae', 'box', 'calendar_id']),
+                    fetchSheetData(URL_MEDICOS, ['medico'])
+                ]);
+                populateCaeSelect();
+                populateMedicoSelect();
+                showToast('Datos cargados correctamente.', 'success');
+            } catch (error) {
+                console.error('Error al cargar datos:', error);
+                showToast(error.message, 'error');
+                caeSelect.innerHTML = `<option value="">Error al cargar</option>`;
+                medicoSelect.innerHTML = `<option value="">Error al cargar</option>`;
+            }
+        };
         
-        // --- KPI Counter Animation ---
-        function animateKPI(element) {
-            const target = +element.dataset.kpi;
-            let current = 0;
-            const increment = target / 100;
-            const interval = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    current = target;
-                    clearInterval(interval);
+        // --- POBLACIÓN DE DESPLEGABLES (sin cambios) ---
+        const populateCaeSelect = () => {
+            const caes = [...new Set(configData.map(item => item.cae))];
+            caeSelect.innerHTML = '<option value="">Selecciona un CAE</option>';
+            caes.sort().forEach(cae => {
+                const option = document.createElement('option');
+                option.value = cae;
+                option.textContent = cae;
+                caeSelect.appendChild(option);
+            });
+        };
+
+        const updateBoxSelect = () => {
+            const selectedCae = caeSelect.value;
+            boxSelect.innerHTML = '<option value="">Selecciona un CAE</option>';
+            boxSelect.disabled = true;
+            if (selectedCae) {
+                const boxes = configData
+                    .filter(item => String(item.cae).trim() === selectedCae.trim())
+                    .map(item => item.box)
+                    .sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
+                const uniqueBoxes = [...new Set(boxes)];
+                
+                boxSelect.innerHTML = '<option value="all">-- Todos los BOX --</option>';
+
+                uniqueBoxes.forEach(box => {
+                    const option = document.createElement('option');
+                    option.value = box;
+                    option.textContent = box;
+                    boxSelect.appendChild(option);
+                });
+                boxSelect.disabled = false;
+            }
+        };
+
+        // --- LÓGICA DE DISPONIBILIDAD (sin cambios) ---
+        const fetchAllBoxAvailabilities = async () => {
+            const cae = caeSelect.value;
+            allOccupiedSlots.clear();
+
+            if (!cae || !selectedDate) {
+                renderAllTimeSlots();
+                return;
+            }
+
+            const boxesForCae = configData.filter(item => String(item.cae).trim() === cae.trim() && item.calendar_id);
+            if (boxesForCae.length === 0) {
+                renderAllTimeSlots();
+                return;
+            }
+
+            timeSlotsWrapper.innerHTML = '<p class="w-full text-center text-slate-500 animate-pulse">Consultando disponibilidad para todos los boxes...</p>';
+
+            const timeMin = new Date(selectedDate);
+            timeMin.setHours(0, 0, 0, 0);
+            const timeMax = new Date(selectedDate);
+            timeMax.setHours(23, 59, 59, 999);
+
+            const availabilityPromises = boxesForCae.map(async (mapping) => {
+                try {
+                    const response = await fetch(API_CHECK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            calendar_id: mapping.calendar_id,
+                            timeMin: timeMin.toISOString(),
+                            timeMax: timeMax.toISOString()
+                        })
+                    });
+                    if (!response.ok) return { box: mapping.box, occupied: [] };
+                    const data = await response.json();
+                    return { box: mapping.box, occupied: data.occupied || [] };
+                } catch (error) {
+                    console.error(`Error consultando box ${mapping.box}:`, error);
+                    return { box: mapping.box, occupied: [] };
                 }
-                element.textContent = Math.ceil(current);
-            }, 20);
-        }
-
-        // --- 3D Card Hover Effect ---
-        document.querySelectorAll('.card-3d').forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const { width, height } = rect;
-                const rotateX = (y / height - 0.5) * -15;
-                const rotateY = (x / width - 0.5) * 15;
-                card.style.setProperty('--rotateX', `${rotateX}deg`);
-                card.style.setProperty('--rotateY', `${rotateY}deg`);
             });
-            card.addEventListener('mouseleave', () => {
-                card.style.setProperty('--rotateX', '0deg');
-                card.style.setProperty('--rotateY', '0deg');
-            });
-        });
 
-        // --- Comparison Slider ---
-        const slider = document.querySelector('.comparison-slider');
-        if(slider) {
-            const handle = slider.querySelector('.slider-handle');
-            const afterImage = slider.querySelector('.after-image');
-            let isDragging = false;
+            try {
+                const results = await Promise.all(availabilityPromises);
+                results.forEach(result => {
+                    allOccupiedSlots.set(result.box, new Set(result.occupied));
+                });
+            } catch (error) {
+                console.error('Error en Promise.all para disponibilidades:', error);
+                showToast('Error al consultar la disponibilidad de algunos boxes.', 'error');
+            } finally {
+                renderAllTimeSlots();
+            }
+        };
+
+        // --- LÓGICA DEL CALENDARIO (sin cambios) ---
+        const handleDayClick = async (e) => {
+            const target = e.target.closest('button');
+            if (!target || !target.dataset.date) return;
             
-            handle.addEventListener('mousedown', () => { isDragging = true; });
-            document.addEventListener('mouseup', () => { isDragging = false; });
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                const rect = slider.getBoundingClientRect();
-                let x = e.clientX - rect.left;
-                if (x < 0) x = 0;
-                if (x > rect.width) x = rect.width;
-                const percentage = (x / rect.width) * 100;
-                handle.style.left = `${percentage}%`;
-                afterImage.style.clipPath = `polygon(${percentage}% 0, 100% 0, 100% 100%, ${percentage}% 100%)`;
-            });
-        }
+            if (!caeSelect.value) {
+                showToast('Primero debes seleccionar un CAE.', 'info');
+                return;
+            }
+            
+            document.querySelectorAll('#calendar-grid button.day-selected').forEach(btn => btn.classList.remove('day-selected'));
+            target.classList.add('day-selected');
+            selectedDate = new Date(target.dataset.date);
+            
+            await fetchAllBoxAvailabilities(); 
+        };
 
-        // --- Header Scroll Effect ---
-        const header = document.getElementById('main-header');
-        window.addEventListener('scroll', () => {
-            header.classList.toggle('header-scrolled', window.scrollY > 50);
-        });
+        // --- LÓGICA DE BLOQUES HORARIOS (sin cambios) ---
+        const renderAllTimeSlots = () => {
+            timeSlotsContainer.style.display = 'block';
+            timeSlotsWrapper.innerHTML = '';
+
+            if (!selectedDate) {
+                 selectedDayText.textContent = 'Selecciona un CAE y un día en el calendario';
+                 return;
+            }
+
+            selectedDayText.textContent = `Día: ${selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+
+            const cae = caeSelect.value;
+            const boxesForCae = [...new Set(configData
+                .filter(item => String(item.cae).trim() === cae.trim())
+                .map(item => item.box))]
+                .sort((a, b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
+
+            if (boxesForCae.length === 0) {
+                timeSlotsWrapper.innerHTML = '<p class="w-full text-center text-slate-500">No hay boxes configurados para este CAE.</p>';
+                return;
+            }
+            
+            boxesForCae.forEach(boxName => {
+                const columnDiv = document.createElement('div');
+                columnDiv.classList.add('box-column');
+                columnDiv.dataset.boxColumn = boxName;
+
+                const title = document.createElement('h4');
+                title.classList.add('box-title');
+                title.textContent = boxName;
+                columnDiv.appendChild(title);
+
+                const occupiedForThisBox = allOccupiedSlots.get(boxName) || new Set();
+
+                for (let hour = 8; hour < 20; hour++) {
+                    for (let minute = 0; minute < 60; minute += 30) {
+                        const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                        const slotEl = document.createElement('button');
+                        slotEl.textContent = time;
+                        slotEl.dataset.time = time;
+                        slotEl.dataset.box = boxName;
+                        slotEl.classList.add('p-2', 'rounded-lg', 'transition-all', 'duration-200', 'ease-in-out', 'shadow-sm', 'font-medium', 'text-sm');
+                        
+                        if (occupiedForThisBox.has(time)) {
+                            slotEl.disabled = true;
+                            slotEl.classList.add('slot-occupied');
+                        } else {
+                            slotEl.classList.add('bg-slate-100', 'hover:bg-indigo-200');
+                        }
+                        
+                        if (selectedBoxForReservation === boxName && selectedTimeSlots.has(time)) {
+                             slotEl.classList.add('slot-selected');
+                        }
+
+                        columnDiv.appendChild(slotEl);
+                    }
+                }
+                timeSlotsWrapper.appendChild(columnDiv);
+            });
+            filterBoxView();
+        };
+
+        const handleTimeSlotClick = (e) => {
+            const target = e.target.closest('button');
+            if (!target || !target.dataset.time || target.disabled) return;
+
+            const time = target.dataset.time;
+            const box = target.dataset.box;
+
+            if (selectedBoxForReservation && selectedBoxForReservation !== box) {
+                selectedTimeSlots.clear();
+                document.querySelectorAll('.slot-selected').forEach(el => el.classList.remove('slot-selected'));
+            }
+
+            selectedBoxForReservation = box;
+
+            if (selectedTimeSlots.has(time)) {
+                selectedTimeSlots.delete(time);
+                target.classList.remove('slot-selected');
+            } else {
+                selectedTimeSlots.add(time);
+                target.classList.add('slot-selected');
+            }
+            
+            if (selectedTimeSlots.size === 0) {
+                selectedBoxForReservation = null;
+            }
+        };
+        
+        const filterBoxView = () => {
+            const selectedBox = boxSelect.value;
+            const allColumns = document.querySelectorAll('.box-column');
+            
+            allColumns.forEach(column => {
+                if (selectedBox === 'all' || selectedBox === '') {
+                    column.style.display = 'flex';
+                } else {
+                    column.style.display = column.dataset.boxColumn === selectedBox ? 'flex' : 'none';
+                }
+            });
+        };
+        
+        // --- LÓGICA DE EVENTOS (sin cambios) ---
+        const setupEventListeners = () => {
+            caeSelect.addEventListener('change', () => {
+                updateBoxSelect();
+                if (selectedDate) {
+                    fetchAllBoxAvailabilities();
+                } else {
+                    timeSlotsContainer.style.display = 'none';
+                    selectedTimeSlots.clear();
+                    selectedBoxForReservation = null;
+                }
+            });
+            
+            boxSelect.addEventListener('change', filterBoxView);
+
+            medicoSelect.addEventListener('change', () => {
+                otroMedicoInput.classList.toggle('hidden', medicoSelect.value !== 'otro');
+            });
+            
+            prevMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+                timeSlotsContainer.style.display = 'none';
+                selectedDate = null;
+            });
+            
+            nextMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+                timeSlotsContainer.style.display = 'none';
+                selectedDate = null;
+            });
+            
+            calendarGrid.addEventListener('click', handleDayClick);
+            timeSlotsWrapper.addEventListener('click', handleTimeSlotClick);
+            reservarBtn.addEventListener('click', handleReserveClick);
+        };
+        
+        // --- MANEJO DE FECHAS Y RESERVA (sin cambios) ---
+        const isDstInSantiago = (date) => {
+            const year = date.getFullYear();
+            const firstOfSep = new Date(year, 8, 1);
+            const firstSaturdaySep = new Date(firstOfSep);
+            firstSaturdaySep.setDate(1 + (6 - firstOfSep.getDay() + 7) % 7);
+            firstSaturdaySep.setHours(23, 59, 59);
+            const firstOfApr = new Date(year, 3, 1);
+            const firstSaturdayApr = new Date(firstOfApr);
+            firstSaturdayApr.setDate(1 + (6 - firstOfApr.getDay() + 7) % 7);
+            firstSaturdayApr.setHours(23, 59, 59);
+            return date >= firstSaturdaySep || date < firstSaturdayApr;
+        };
+        const getSantiagoOffset = (date) => isDstInSantiago(date) ? '-03:00' : '-04:00';
+        const formatToISOWithOffset = (date, time) => {
+            const [hours, minutes] = time.split(':');
+            const dateWithTime = new Date(date);
+            dateWithTime.setHours(hours, minutes, 0, 0);
+            const year = dateWithTime.getFullYear();
+            const month = String(dateWithTime.getMonth() + 1).padStart(2, '0');
+            const day = String(dateWithTime.getDate()).padStart(2, '0');
+            const offset = getSantiagoOffset(dateWithTime);
+            return `${year}-${month}-${day}T${time}:00${offset}`;
+        };
+
+        async function handleReserveClick() {
+            const cae = caeSelect.value;
+            const box = selectedBoxForReservation;
+            let medico = medicoSelect.value;
+            const otroMedico = otroMedicoInput.value.trim();
+            let esNuevoMedico = false;
+
+            if (medico === 'otro') {
+                if (!otroMedico) {
+                    return showToast('Por favor, ingresa el nombre del nuevo médico.', 'error');
+                }
+                medico = otroMedico;
+                esNuevoMedico = true;
+            }
+
+            if (!cae || !box || !medico) {
+                return showToast('Completa todos los filtros (CAE, Médico) y selecciona un horario en un BOX.', 'error');
+            }
+            if (!selectedDate) {
+                return showToast('Por favor, selecciona un día en el calendario.', 'error');
+            }
+            if (selectedTimeSlots.size === 0) {
+                return showToast('Por favor, selecciona al menos un bloque horario.', 'error');
+            }
+
+            const calendarMapping = configData.find(item => 
+                String(item.cae).trim() === cae.trim() && 
+                String(item.box).trim() === box.trim()
+            );
+
+            if (!calendarMapping) {
+                return showToast('Error: No se encontró calendario para esa combinación de CAE y BOX.', 'error');
+            }
+
+            await fetchAllBoxAvailabilities();
+            const slotsArray = Array.from(selectedTimeSlots);
+            const occupiedSlotsForThisBox = allOccupiedSlots.get(box) || new Set();
+            const alreadyReserved = slotsArray.some(slot => occupiedSlotsForThisBox.has(slot));
+            
+            if (alreadyReserved) {
+                showToast('¡Conflicto! Uno de los horarios fue ocupado mientras elegías. Por favor, selecciona otros.', 'error');
+                selectedTimeSlots.clear();
+                selectedBoxForReservation = null;
+                return;
+            }
+
+            const calendarId = calendarMapping.calendar_id;
+            const reservas = slotsArray.sort().map(time => {
+                const [hours, minutes] = time.split(':').map(Number);
+                const fechaInicio = new Date(selectedDate);
+                fechaInicio.setHours(hours, minutes, 0, 0);
+                const fechaFin = new Date(fechaInicio);
+                fechaFin.setMinutes(fechaInicio.getMinutes() + 30);
+                return {
+                    fecha_inicio: formatToISOWithOffset(selectedDate, time),
+                    fecha_fin: formatToISOWithOffset(selectedDate, `${String(fechaFin.getHours()).padStart(2, '0')}:${String(fechaFin.getMinutes()).padStart(2, '0')}`)
+                };
+            });
+
+            const payload = { cae, box, medico, nuevo_medico: esNuevoMedico, calendar_id: calendarId, reservas };
+            
+            reservarBtn.disabled = true;
+            reservarBtn.textContent = 'Reservando...';
+            showToast('Enviando reserva...', 'info');
+
+            try {
+                const response = await fetch(API_RESERVAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`El servidor respondió con ${response.status}`);
+                showToast('¡Reserva realizada con éxito!', 'success');
+                resetForm();
+            } catch (error) {
+                console.error('Error al enviar la reserva:', error);
+                showToast('Error al enviar la reserva. Intenta de nuevo.', 'error');
+            } finally {
+                reservarBtn.disabled = false;
+                reservarBtn.textContent = 'Reservar';
+            }
+        };
+
+        // --- OTRAS FUNCIONES AUXILIARES ---
+        const showToast = (message, type = 'info') => {
+            toastMessageEl.textContent = message;
+            // Ajuste para la animación de toast responsiva
+            const isMobile = window.innerWidth < 640;
+            const initialTransform = isMobile ? 'translateX(100%)' : 'translateX(120%)';
+            toastEl.classList.remove('bg-green-500', 'bg-red-500', 'bg-blue-500');
+            if (isMobile) {
+                toastEl.classList.remove('translate-x-[120%]');
+                toastEl.classList.add('translate-x-full');
+            } else {
+                 toastEl.classList.remove('translate-x-full');
+                 toastEl.classList.add('translate-x-[120%]');
+            }
+            
+            const typeClasses = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
+            toastEl.classList.add(typeClasses[type]);
+            toastEl.style.transform = 'translateX(0)';
+            setTimeout(() => { toastEl.style.transform = initialTransform; }, 4000);
+        };
+
+        const resetForm = () => {
+            caeSelect.value = '';
+            updateBoxSelect();
+            medicoSelect.value = '';
+            otroMedicoInput.value = '';
+            otroMedicoInput.classList.add('hidden');
+            selectedDate = null;
+            selectedTimeSlots.clear();
+            selectedBoxForReservation = null;
+            allOccupiedSlots.clear();
+            timeSlotsContainer.style.display = 'none';
+            document.querySelectorAll('#calendar-grid button.day-selected').forEach(btn => btn.classList.remove('day-selected'));
+        };
+
+        function populateMedicoSelect() {
+            medicoSelect.innerHTML = '<option value="">Selecciona un Médico</option>';
+            medicosList.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.medico;
+                option.textContent = item.medico;
+                medicoSelect.appendChild(option);
+            });
+            const otroOption = document.createElement('option');
+            otroOption.value = 'otro';
+            otroOption.textContent = 'Otro / Agregar médico...';
+            medicoSelect.appendChild(otroOption);
+            medicoSelect.disabled = false;
+        };
+        
+        function renderCalendar() {
+            calendarGrid.innerHTML = `<div class="font-medium text-xs text-slate-500">LU</div><div class="font-medium text-xs text-slate-500">MA</div><div class="font-medium text-xs text-slate-500">MI</div><div class="font-medium text-xs text-slate-500">JU</div><div class="font-medium text-xs text-slate-500">VI</div><div class="font-medium text-xs text-slate-500">SA</div><div class="font-medium text-xs text-slate-500">DO</div>`;
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            monthYearEl.textContent = currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+            const firstDayOfMonth = new Date(year, month, 1);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const startDayIndex = (firstDayOfMonth.getDay() + 6) % 7;
+            for (let i = 0; i < startDayIndex; i++) {
+                calendarGrid.appendChild(document.createElement('div'));
+            }
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('button');
+                dayEl.textContent = day;
+                // **Ajuste para botones del calendario responsivos**
+                dayEl.classList.add('p-1', 'sm:p-2', 'rounded-full', 'hover:bg-slate-100', 'transition', 'cursor-pointer', 'w-full', 'aspect-square', 'flex', 'items-center', 'justify-center', 'mx-auto', 'text-sm');
+                const today = new Date();
+                if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                    dayEl.classList.add('bg-slate-200', 'font-bold');
+                }
+                dayEl.dataset.date = new Date(year, month, day).toISOString();
+                calendarGrid.appendChild(dayEl);
+            }
+        };
+
+        init();
     });
     </script>
 </body>
